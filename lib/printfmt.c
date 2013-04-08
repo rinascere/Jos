@@ -206,10 +206,12 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 		// (unsigned) octal
 		case 'o':
 			// Replace this with your code.
+			/*putch('X', putdat);
 			putch('X', putdat);
-			putch('X', putdat);
-			putch('X', putdat);
-			break;
+			putch('X', putdat);*/
+			num = getuint(&ap,lflag);
+			base = 8;
+			goto number;
 
 		// pointer
 		case 'p':
@@ -247,10 +249,27 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 
             const char *null_error = "\nerror! writing through NULL pointer! (%n argument)\n";
             const char *overflow_error = "\nwarning! The value %n argument pointed to has been overflowed!\n";
-
+            int *inp = putdat;
+            /*if((*inp) > 127){
+                 printfmt(putch, putdat, "%s", overflow_error);
+            	 char *chn1 = va_arg(ap,char *);
+                 *chn1 = -1;
+            }else{*/
+            char *p = putdat;
+            char temp = *p;
+            char *chn = va_arg(ap,char *);
+            if(chn == NULL){
+		printfmt(putch, putdat, "%s", null_error);
+            }else{
+                 *chn = temp;
+                 if((*inp)>127){
+                     printfmt(putch, putdat, "%s", overflow_error);
+                 }
+           }
             // Your code here
-
+            //putch('k',putdat);
             break;
+            //break;
         }
 
 		// escaped '%' character

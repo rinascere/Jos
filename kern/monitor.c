@@ -83,14 +83,29 @@ start_overflow(void)
 
     // hint: You can use the read_pretaddr function to retrieve 
     //       the pointer to the function call return address;
-
     char str[256] = {};
     int nstr = 0;
     char *pret_addr;
-
 	// Your code here.
-    
-
+    pret_addr = (char *)read_pretaddr();
+    int i;	
+    for(i=0;i<256;i++){
+	str[i] = '0';
+    }
+    void (*dofp)();  
+    dofp = do_overflow;
+    uint32_t subaddr = (uint32_t)dofp+3;
+    //from low to high copy 8bytes each time to overwrite the value pre_addr pointed to
+    int j;
+    char jtc;
+    for(j = 0;j < 4;j++)
+    {
+        jtc= subaddr>>(8*j) ;
+	nstr =  jtc &  0x000000ff;
+	str[nstr] = '\0';
+        cprintf("%s%n\n",str,pret_addr+j);
+	str[nstr] = '0';
+    }
 
 }
 
@@ -103,10 +118,31 @@ overflow_me(void)
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+    // Your code here.
+    unsigned int ebp = read_ebp();
+    unsigned int eip;
+    cprintf("Stack backtrace:\n");
+    do{
+      //cprintf("ebp %x eip %x args %x %x %x %x %x\n",ebp,(unsigned int)*(ebp+1),*(ebp+2),*(ebp+3),*(ebp+4),*(ebp+5),*(ebp+6));
+      eip = *((unsigned int*)ebp+1);
+      cprintf("ebp %08x eip %08x args %08x %08x %08x %08x %08x\n",ebp,eip,*((unsigned int*)ebp+2),
+	*((unsigned int*)ebp+3),*((unsigned int*)ebp+4),*((unsigned int*)ebp+5),*((unsigned int*)ebp+6));
+      struct Eipdebuginfo dinfo;
+      if(debuginfo_eip(eip, &dinfo) == 0){
+         char fn[dinfo.eip_fn_namelen+1];
+         int i;
+         for(i=0;i<dinfo.eip_fn_namelen;i++){
+              fn[i] = dinfo.eip_fn_name[i];
+         }
+         fn[dinfo.eip_fn_namelen]='\0';
+         cprintf("%s:%d: %s+%x\n",dinfo.eip_file,dinfo.eip_line,fn,(eip-dinfo.eip_fn_addr));
+         //cprintf("%x\n",(eip-dinfo.eip_fn_addr));
+      }
+      ebp = *((unsigned int *)ebp);
+    }while(ebp);
     overflow_me();
     cprintf("Backtrace success\n");
-	return 0;
+    return 0;
 }
 
 
