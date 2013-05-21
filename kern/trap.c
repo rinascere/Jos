@@ -24,8 +24,10 @@ struct Gatedesc idt[256] = { { 0 } };
 struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
 };
-
-
+#define SEG_INIT(NUM, PLV){\
+	    extern void entry##NUM(); \
+	    SETGATE(idt[NUM], 0, GD_KT, entry##NUM, PLV); \
+}
 static const char *trapname(int trapno)
 {
 	static const char * const excnames[] = {
@@ -57,16 +59,43 @@ static const char *trapname(int trapno)
 		return "System call";
 	return "(unknown trap)";
 }
-
-
+#define wrmsr(msr,val1,val2) \
+	__asm__ __volatile__("wrmsr" \
+	: /* no outputs */ \
+	: "c" (msr), "a" (val1), "d" (val2))
 void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
-
+	SEG_INIT(0,0);
+	SEG_INIT(1,0);
+	SEG_INIT(2,0);
+	SEG_INIT(3,3);
+	SEG_INIT(4,0);
+	SEG_INIT(5,0);
+	SEG_INIT(6,0);
+	SEG_INIT(7,0);
+	SEG_INIT(8,0);
+	SEG_INIT(10,0);
+	SEG_INIT(11,0);
+	SEG_INIT(12,0);
+	SEG_INIT(13,0);
+	SEG_INIT(14,0);
+	SEG_INIT(16,0);
+	SEG_INIT(17,0);
+	SEG_INIT(18,0);
+	SEG_INIT(19,0);
+	extern void sysenter_handler();
+	//SEG_INIT(48,3);
+	//SETGATE(idt[T_SYSCALL],0,GD_KT,sysenter_handler,3)
 	// Per-CPU setup 
+	wrmsr(0x174, GD_KT, 0);
+	
+   	wrmsr(0x175, KSTACKTOP, 0);
+
+    	wrmsr(0x176, sysenter_handler, 0);
 	trap_init_percpu();
 }
 
@@ -86,6 +115,7 @@ trap_init_percpu(void)
 
 	// Load the TSS selector (like other segment selectors, the
 	// bottom three bits are special; we leave them 0)
+	
 	ltr(GD_TSS0);
 
 	// Load the IDT
@@ -143,7 +173,31 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
+	struct PushRegs *regs;
+	int ret;
+	switch(tf->tf_trapno){
+		case T_PGFLT:
+			//cprintf("page number is %d\n",tf->tf_trapno);
+			page_fault_handler(tf);
+			break;
+		case T_BRKPT:
+			monitor(tf);
+			break;
+		/*case T_SYSCALL:
+			tf->tf_regs.reg_eax = 
+      				syscall(regs->reg_eax, 
+					regs->reg_edx, 
+					regs->reg_ecx,
+                        		regs->reg_ebx, 
+					regs->reg_edi, 
+					regs->reg_esi);*/
+			//if(ret < 0)
+				//panic("trap_dispatch:invalid syscall number!\n");
+      			//regs->reg_eax = ret;
+			//return;
+		default:
+			break;
+	}
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
@@ -165,7 +219,7 @@ trap(struct Trapframe *tf)
 	// fails, DO NOT be tempted to fix it by inserting a "cli" in
 	// the interrupt path.
 	assert(!(read_eflags() & FL_IF));
-
+	//cprintf("in trap!\n");
 	cprintf("Incoming TRAP frame at %p\n", tf);
 
 	if ((tf->tf_cs & 3) == 3) {
@@ -203,7 +257,9 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+	if((tf->tf_cs & 3) == 0){
+		panic("kernel-mode page fault!\n");
+	}
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 

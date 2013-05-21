@@ -10,6 +10,7 @@
 #include <kern/kclock.h>
 #include <kern/env.h>
 #include <kern/trap.h>
+#include <inc/x86.h>
 
 
 void
@@ -42,6 +43,7 @@ i386_init(void)
 
 	// Lab 3 user environment initialization functions
 	env_init();
+	//Page *p = page_alloc();
 	trap_init();
 
 #if defined(TEST)
@@ -49,7 +51,7 @@ i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	ENV_CREATE(user_hello, ENV_TYPE_USER);
+	ENV_CREATE(user_evilhello2, ENV_TYPE_USER);
 #endif // TEST*
 
 	// We only have one user environment for now, so just run it.
