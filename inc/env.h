@@ -68,4 +68,9 @@ struct Env {
 	int env_ipc_perm;		// Perm of page mapping received
 };
 
+struct proc{
+	struct Env env;
+	char stack[PGSIZE];
+};
+
 #endif // !JOS_INC_ENV_H

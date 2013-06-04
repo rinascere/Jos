@@ -22,6 +22,8 @@ void
 i386_init(void)
 {
 	extern char edata[], end[];
+    // Lab1 only
+    char chnum1 = 0, chnum2 = 0, ntest[256] = {};
 
 	// Before doing anything else, complete the ELF loading process.
 	// Clear the uninitialized global data (BSS) section of our program.
@@ -32,13 +34,21 @@ i386_init(void)
 	// Can't call cprintf until after we do this!
 	cons_init();
 
-	cprintf("6828 decimal is %o octal!\n", 6828);
+	cprintf("6828 decimal is %o octal!%n\n%n", 6828, &chnum1, &chnum2);
+    cprintf("chnum1: %d chnum2: %d\n", chnum1, chnum2);
+    cprintf("%n", NULL);
+    memset(ntest, 0xd, sizeof(ntest) - 1);
+    cprintf("%s%n", ntest, &chnum1); 
+    cprintf("chnum1: %d\n", chnum1);
+
+
 
 	// Lab 2 memory management initialization functions
 	mem_init();
 
 	// Lab 3 user environment initialization functions
 	env_init();
+	//Page *p = page_alloc();
 	trap_init();
 
 	// Lab 4 multiprocessor initialization functions
@@ -50,7 +60,7 @@ i386_init(void)
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
-
+	lock_kernel();
 	// Starting non-boot CPUs
 	boot_aps();
 
@@ -58,13 +68,18 @@ i386_init(void)
 	int i;
 	for (i = 0; i < NCPU; i++)
 		ENV_CREATE(user_idle, ENV_TYPE_IDLE);
-
+	/*ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_yield, ENV_TYPE_USER);
+	ENV_CREATE(user_yield, ENV_TYPE_USER);*/
+	//ENV_CREATE(user_dumbfork, ENV_TYPE_USER);
+	//ENV_CREATE(user_spin, ENV_TYPE_USER);
 #if defined(TEST)
 	// Don't touch -- used by grading script!
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	ENV_CREATE(user_primes, ENV_TYPE_USER);
+	//ENV_CREATE(user_primes, ENV_TYPE_USER);
 #endif // TEST*
 
 	// Schedule and run the first user environment!
@@ -121,9 +136,11 @@ mp_main(void)
 	// only one CPU can enter the scheduler at a time!
 	//
 	// Your code here:
-
+	lock_kernel();
+	cprintf("mp_main sched_yield!\n");
+	sched_yield();
 	// Remove this after you finish Exercise 4
-	for (;;);
+	//for (;;);
 }
 
 /*

@@ -15,7 +15,9 @@ umain(int argc, char **argv)
 	}
 
 	while (1) {
+		cprintf("ipc reciving!\n");
 		uint32_t i = ipc_recv(&who, 0, 0);
+		cprintf("ipc recived!\n");
 		cprintf("%x got %d from %x\n", sys_getenvid(), i, who);
 		if (i == 10)
 			return;

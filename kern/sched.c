@@ -3,7 +3,7 @@
 #include <kern/env.h>
 #include <kern/pmap.h>
 #include <kern/monitor.h>
-
+#include <kern/spinlock.h>
 
 // Choose a user environment to run and run it.
 void
@@ -11,7 +11,7 @@ sched_yield(void)
 {
 	struct Env *idle;
 	int i;
-
+	//cprintf("in kernel sched yield!\n");
 	// Implement simple round-robin scheduling.
 	//
 	// Search through 'envs' for an ENV_RUNNABLE environment in
@@ -29,7 +29,23 @@ sched_yield(void)
 	// below to switch to this CPU's idle environment.
 
 	// LAB 4: Your code here.
-
+	int j;
+	int cur_eid;
+	if(curenv != NULL){
+		cur_eid = ENVX(curenv->env_id);
+		for(j = (cur_eid+1)%NENV;j!= cur_eid;){
+			if(envs[j].env_status == ENV_RUNNABLE && envs[j].env_type != ENV_TYPE_IDLE){
+				//cprintf("change running env!\n");
+				//unlock_kernel();
+				env_run(&envs[j]);
+			}
+			j = (j+1)%NENV;
+		}
+		if(curenv->env_status == ENV_RUNNING){
+			//unlock_kernel();
+			env_run(curenv);
+		}
+	}
 	// For debugging and testing purposes, if there are no
 	// runnable environments other than the idle environments,
 	// drop into the kernel monitor.

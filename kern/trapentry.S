@@ -47,8 +47,43 @@
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
+TRAPHANDLER_NOEC(entry0, T_DIVIDE);
+TRAPHANDLER_NOEC(entry1, T_DEBUG);
+TRAPHANDLER_NOEC(entry2, T_NMI);
+TRAPHANDLER_NOEC(entry3, T_BRKPT);
+TRAPHANDLER_NOEC(entry4, T_OFLOW);
+TRAPHANDLER_NOEC(entry5, T_BOUND);
+TRAPHANDLER_NOEC(entry6, T_ILLOP);
+TRAPHANDLER_NOEC(entry7, T_DEVICE);
+TRAPHANDLER(entry8, T_DBLFLT);
+TRAPHANDLER(entry10, T_TSS);
+TRAPHANDLER(entry11, T_SEGNP);
+TRAPHANDLER(entry12, T_STACK);
+TRAPHANDLER(entry13, T_GPFLT);
+TRAPHANDLER(entry14, T_PGFLT);
+TRAPHANDLER_NOEC(entry16, T_FPERR);
+TRAPHANDLER(entry17, T_ALIGN);
+TRAPHANDLER_NOEC(entry18, T_MCHK);
+TRAPHANDLER_NOEC(entry19, T_SIMDERR );
+//TRAPHANDLER_NOEC(entry48, T_SYSCALL);
 
 
+TRAPHANDLER_NOEC(irq0, IRQ_OFFSET+0 );
+TRAPHANDLER_NOEC(irq1, IRQ_OFFSET+1 );
+TRAPHANDLER_NOEC(irq2, IRQ_OFFSET+2 );
+TRAPHANDLER_NOEC(irq3, IRQ_OFFSET+3 );
+TRAPHANDLER_NOEC(irq4, IRQ_OFFSET+4 );
+TRAPHANDLER_NOEC(irq5, IRQ_OFFSET+5 );
+TRAPHANDLER_NOEC(irq6, IRQ_OFFSET+6 );
+TRAPHANDLER_NOEC(irq7, IRQ_OFFSET+7 );
+TRAPHANDLER_NOEC(irq8, IRQ_OFFSET+8 );
+TRAPHANDLER_NOEC(irq9, IRQ_OFFSET+9 );
+TRAPHANDLER_NOEC(irq10, IRQ_OFFSET+10 );
+TRAPHANDLER_NOEC(irq11, IRQ_OFFSET+11 );
+TRAPHANDLER_NOEC(irq12, IRQ_OFFSET+12 );
+TRAPHANDLER_NOEC(irq13, IRQ_OFFSET+13 );
+TRAPHANDLER_NOEC(irq14, IRQ_OFFSET+14 );
+TRAPHANDLER_NOEC(irq15, IRQ_OFFSET+15 );
 
 .globl sysenter_handler;
 .type sysenter_handler, @function;
@@ -57,9 +92,44 @@ sysenter_handler:
 /*
  * Lab 3: Your code here for system call handling
  */
-
-
+ 	pushl $GD_UD|3
+    	pushl %ebp
+    	pushfl
+    	pushl $GD_UT|3
+    	pushl %esi
+    	pushl $0
+    	pushl $0
+    	pushl %ds
+    	pushl %es
+    	pushal
+    	movw $GD_KD, %ax
+    	movw %ax, %ds
+    	movw %ax, %es
+    	pushl %esp
+    	call syscall_wrapper
+    	popl %esp
+    	popal
+    	popl %es
+    	popl %ds
+    	movl %ebp, %ecx
+    	movl %esi, %edx
+    	sysexit
+	
 /*
  * Lab 3: Your code here for _alltraps
  */
+_alltraps:
+	#build trap frame.
+	pushl %ds
+	pushl %es
+	pushal
+	
+	#setup data segments.
+	movl $GD_KD, %eax
+	movw %ax, %ds
+	movw %ax, %es
+	
+	#call trap(tf),tf=%esp
+	pushl %esp
+	call trap
 

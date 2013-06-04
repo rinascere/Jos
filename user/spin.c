@@ -17,13 +17,21 @@ umain(int argc, char **argv)
 
 	cprintf("I am the parent.  Running the child...\n");
 	sys_yield();
+	cprintf("1 yield!\n");
 	sys_yield();
+	cprintf("2 yield!\n");
 	sys_yield();
+	cprintf("3 yield!\n");
 	sys_yield();
+	cprintf("4 yield!\n");
 	sys_yield();
+	cprintf("5 yield!\n");
 	sys_yield();
+	cprintf("6 yield!\n");
 	sys_yield();
+	cprintf("7 yield!\n");
 	sys_yield();
+	cprintf("8 yield!\n");
 
 	cprintf("I am the parent.  Killing the child...\n");
 	sys_env_destroy(env);
